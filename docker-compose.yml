@@ -1,0 +1,13 @@
+services:
+  searchr:
+    build: .
+    ports:
+      - "4444:4444"
+    environment:
+      - BRAVE_API_KEY=${BRAVE_API_KEY:-}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4444/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3

@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Searchr</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0d0d0f;
+    --surface: #141417;
+    --border: #222228;
+    --accent: #c8ff00;
+    --accent2: #ff6b35;
+    --text: #e8e8ec;
+    --muted: #6a6a78;
+    --google: #4285f4;
+    --brave: #ff6b35;
+    --wiki: #c8ff00;
+    --ddg: #de5833;
+  }
+
+  html, body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    min-height: 100vh;
+  }
+
+  /* ── HOME ── */
+  #home {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 2rem;
+    gap: 2.5rem;
+  }
+
+  .wordmark {
+    font-size: clamp(3rem, 10vw, 6.5rem);
+    font-weight: 800;
+    letter-spacing: -0.04em;
+    line-height: 1;
+    position: relative;
+    user-select: none;
+  }
+  .wordmark span { color: var(--accent); }
+  .wordmark::after {
+    content: '';
+    display: block;
+    height: 3px;
+    background: var(--accent);
+    width: 0;
+    transition: width 0.4s cubic-bezier(.22,1,.36,1);
+    margin-top: 0.15em;
+  }
+  .wordmark:hover::after { width: 100%; }
+
+  .tagline {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--muted);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+
+  /* ── SEARCH BAR ── */
+  .search-wrap {
+    width: 100%;
+    max-width: 640px;
+    position: relative;
+  }
+
+  .search-box {
+    width: 100%;
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    font-size: 1.1rem;
+    font-weight: 500;
+    padding: 1rem 1.25rem;
+    padding-right: 3.5rem;
+    border-radius: 4px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    caret-color: var(--accent);
+  }
+  .search-box::placeholder { color: var(--muted); font-weight: 400; }
+  .search-box:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(200,255,0,0.08);
+  }
+
+  .search-btn {
+    position: absolute;
+    right: 0.6rem;
+    top: 50%;
+    transform: translateY(-50%);
+    background: var(--accent);
+    border: none;
+    color: #0d0d0f;
+    width: 2.4rem;
+    height: 2.4rem;
+    border-radius: 3px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    transition: transform 0.15s, background 0.15s;
+    flex-shrink: 0;
+  }
+  .search-btn:hover { background: #d4ff1a; transform: translateY(-50%) scale(1.06); }
+  .search-btn:active { transform: translateY(-50%) scale(0.96); }
+
+  /* ── RESULTS PAGE ── */
+  #results-page {
+    display: none;
+    min-height: 100vh;
+  }
+
+  .top-bar {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(13,13,15,0.92);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    padding: 0.75rem 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .top-logo {
+    font-size: 1.35rem;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    text-decoration: none;
+    color: var(--text);
+    flex-shrink: 0;
+    cursor: pointer;
+  }
+  .top-logo span { color: var(--accent); }
+
+  .top-search-wrap { flex: 1; max-width: 520px; position: relative; }
+  .top-search-box {
+    width: 100%;
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 500;
+    padding: 0.6rem 1rem;
+    padding-right: 2.8rem;
+    border-radius: 4px;
+    outline: none;
+    transition: border-color 0.2s;
+    caret-color: var(--accent);
+  }
+  .top-search-box::placeholder { color: var(--muted); }
+  .top-search-box:focus { border-color: var(--accent); }
+  .top-search-btn {
+    position: absolute;
+    right: 0.5rem;
+    top: 50%;
+    transform: translateY(-50%);
+    background: var(--accent);
+    border: none;
+    color: #0d0d0f;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 3px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    transition: background 0.15s;
+  }
+  .top-search-btn:hover { background: #d4ff1a; }
+
+  .stats {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.68rem;
+    color: var(--muted);
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+
+  .results-body {
+    display: grid;
+    grid-template-columns: 1fr min(680px, 100%) 1fr;
+    padding: 2rem 1rem;
+    gap: 1.5rem;
+  }
+  .results-col {
+    grid-column: 2;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  /* source filter pills */
+  .filter-row {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+  }
+  .pill {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.05em;
+    padding: 0.3rem 0.7rem;
+    border-radius: 2px;
+    border: 1px solid var(--border);
+    cursor: pointer;
+    color: var(--muted);
+    background: transparent;
+    transition: all 0.15s;
+    text-transform: uppercase;
+  }
+  .pill:hover { border-color: var(--text); color: var(--text); }
+  .pill.active { color: #0d0d0f; border-color: transparent; }
+  .pill.all.active { background: var(--text); }
+  .pill.google.active { background: var(--google); }
+  .pill.brave.active { background: var(--brave); }
+  .pill.wiki.active { background: var(--wiki); }
+  .pill.duckduckgo.active { background: var(--ddg); color: #fff; }
+  .src-duckduckgo { background: var(--ddg); }
+
+  /* result cards */
+  .result-card {
+    padding: 1.25rem 0;
+    border-bottom: 1px solid var(--border);
+    transition: padding-left 0.2s;
+    position: relative;
+  }
+  .result-card:first-child { border-top: 1px solid var(--border); }
+  .result-card:hover { padding-left: 0.75rem; }
+  .result-card:hover::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 2px;
+    background: var(--accent);
+  }
+
+  .result-domain {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.68rem;
+    color: var(--muted);
+    margin-bottom: 0.3rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .source-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    display: inline-block;
+    flex-shrink: 0;
+  }
+  .src-google { background: var(--google); }
+  .src-brave  { background: var(--brave); }
+  .src-wikipedia { background: var(--wiki); }
+
+  .result-title {
+    font-size: 1.05rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    line-height: 1.3;
+    margin-bottom: 0.4rem;
+  }
+  .result-title a {
+    color: var(--text);
+    text-decoration: none;
+    transition: color 0.15s;
+  }
+  .result-title a:hover { color: var(--accent); }
+
+  .result-snippet {
+    font-size: 0.875rem;
+    color: var(--muted);
+    line-height: 1.55;
+    font-weight: 400;
+  }
+
+  .multi-source {
+    display: flex;
+    gap: 0.3rem;
+    margin-top: 0.5rem;
+  }
+
+  /* loading */
+  .loader {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 5rem 0;
+    gap: 1.5rem;
+    grid-column: 2;
+  }
+  .loader-bar {
+    width: 200px;
+    height: 2px;
+    background: var(--border);
+    border-radius: 1px;
+    overflow: hidden;
+    position: relative;
+  }
+  .loader-bar::after {
+    content: '';
+    position: absolute;
+    left: -40%;
+    top: 0; bottom: 0;
+    width: 40%;
+    background: var(--accent);
+    animation: slide 1s ease-in-out infinite;
+  }
+  @keyframes slide {
+    0% { left: -40%; }
+    100% { left: 100%; }
+  }
+  .loader-text {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .no-results {
+    text-align: center;
+    padding: 4rem 0;
+    color: var(--muted);
+    grid-column: 2;
+  }
+  .no-results h2 { font-size: 1.5rem; margin-bottom: 0.5rem; color: var(--text); }
+
+  /* card fade-in */
+  .result-card {
+    opacity: 0;
+    transform: translateY(8px);
+    animation: fadeUp 0.25s ease forwards;
+  }
+  @keyframes fadeUp {
+    to { opacity: 1; transform: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- HOME -->
+<div id="home">
+  <div>
+    <div class="wordmark">Search<span>r</span></div>
+    <div class="tagline" style="margin-top:0.5rem">Google · Brave · DuckDuckGo · Wikipedia</div>
+  </div>
+  <div class="search-wrap">
+    <input class="search-box" id="home-input" placeholder="What are you looking for?" autocomplete="off" autofocus>
+    <button class="search-btn" id="home-btn" aria-label="Search">→</button>
+  </div>
+</div>
+
+<!-- RESULTS -->
+<div id="results-page">
+  <div class="top-bar">
+    <div class="top-logo" id="logo-home">Search<span>r</span></div>
+    <div class="top-search-wrap">
+      <input class="top-search-box" id="top-input" placeholder="Search..." autocomplete="off">
+      <button class="top-search-btn" id="top-btn">→</button>
+    </div>
+    <div class="stats" id="stats"></div>
+  </div>
+
+  <div class="results-body" id="results-body">
+    <div class="loader" id="loader">
+      <div class="loader-bar"></div>
+      <div class="loader-text">Searching...</div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const homeEl = document.getElementById('home');
+  const resultsPage = document.getElementById('results-page');
+  const homeInput = document.getElementById('home-input');
+  const topInput = document.getElementById('top-input');
+  const statsEl = document.getElementById('stats');
+  const resultsBody = document.getElementById('results-body');
+  const loader = document.getElementById('loader');
+
+  let allResults = [];
+  let activeFilter = 'all';
+
+  function getDomain(url) {
+    try { return new URL(url).hostname.replace('www.', ''); }
+    catch { return url; }
+  }
+
+  function sourceClass(src) {
+    return src === 'wikipedia' ? 'src-wikipedia' : `src-${src}`;
+  }
+
+  function renderResults(results) {
+    const existing = resultsBody.querySelectorAll('.result-card, .filter-row, .no-results');
+    existing.forEach(el => el.remove());
+    loader.style.display = 'none';
+
+    // filter row
+    const filterRow = document.createElement('div');
+    filterRow.className = 'filter-row results-col';
+
+    const filters = ['all', 'google', 'brave', 'duckduckgo', 'wikipedia'];
+    filters.forEach(f => {
+      const pill = document.createElement('button');
+      pill.className = `pill ${f} ${activeFilter === f ? 'active' : ''}`;
+      pill.textContent = f;
+      pill.onclick = () => {
+        activeFilter = f;
+        const filtered = f === 'all' ? allResults : allResults.filter(r => r.sources.includes(f) || r.source === f);
+        renderResults(filtered);
+      };
+      filterRow.appendChild(pill);
+    });
+    resultsBody.appendChild(filterRow);
+
+    if (!results.length) {
+      const none = document.createElement('div');
+      none.className = 'no-results results-col';
+      none.innerHTML = `<h2>No results found</h2><p>Try a different query or check your sources.</p>`;
+      resultsBody.appendChild(none);
+      return;
+    }
+
+    results.forEach((r, i) => {
+      const card = document.createElement('div');
+      card.className = 'result-card results-col';
+      card.style.animationDelay = `${i * 30}ms`;
+
+      const sources = r.sources || [r.source];
+      const dotsHtml = sources.map(s => `<span class="source-dot ${sourceClass(s)}" title="${s}"></span>`).join('');
+
+      card.innerHTML = `
+        <div class="result-domain">
+          ${dotsHtml}
+          ${getDomain(r.url)}
+        </div>
+        <div class="result-title"><a href="${r.url}" target="_blank" rel="noopener">${r.title || r.url}</a></div>
+        ${r.snippet ? `<div class="result-snippet">${r.snippet.slice(0, 220)}${r.snippet.length > 220 ? '…' : ''}</div>` : ''}
+      `;
+      resultsBody.appendChild(card);
+    });
+  }
+
+  async function doSearch(query) {
+    if (!query.trim()) return;
+
+    homeEl.style.display = 'none';
+    resultsPage.style.display = 'block';
+    topInput.value = query;
+    document.title = `${query} — Searchr`;
+    statsEl.textContent = '';
+    activeFilter = 'all';
+
+    // show loader
+    const existing = resultsBody.querySelectorAll('.result-card, .filter-row, .no-results');
+    existing.forEach(el => el.remove());
+    loader.style.display = 'flex';
+
+    try {
+      const res = await fetch(`/search?q=${encodeURIComponent(query)}`);
+      const data = await res.json();
+      allResults = data.results;
+      renderResults(allResults);
+
+      const srcParts = [];
+      if (data.sources.google) srcParts.push(`${data.sources.google} Google`);
+      if (data.sources.brave) srcParts.push(`${data.sources.brave} Brave`);
+      if (data.sources.wikipedia) srcParts.push(`${data.sources.wikipedia} Wiki`);
+      statsEl.textContent = `${data.count} results · ${data.elapsed_ms}ms`;
+    } catch (err) {
+      loader.style.display = 'none';
+      resultsBody.innerHTML += `<div class="no-results results-col"><h2>Error</h2><p>${err.message}</p></div>`;
+    }
+  }
+
+  // HOME search
+  document.getElementById('home-btn').onclick = () => doSearch(homeInput.value);
+  homeInput.addEventListener('keydown', e => { if (e.key === 'Enter') doSearch(homeInput.value); });
+
+  // TOP search
+  document.getElementById('top-btn').onclick = () => doSearch(topInput.value);
+  topInput.addEventListener('keydown', e => { if (e.key === 'Enter') doSearch(topInput.value); });
+
+  // Logo → home
+  document.getElementById('logo-home').onclick = () => {
+    resultsPage.style.display = 'none';
+    homeEl.style.display = 'flex';
+    homeInput.value = '';
+    homeInput.focus();
+    document.title = 'Searchr';
+  };
+
+  // URL params
+  const params = new URLSearchParams(location.search);
+  if (params.get('q')) doSearch(params.get('q'));
+</script>
+</body>
+</html>
