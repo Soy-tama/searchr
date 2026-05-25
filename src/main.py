@@ -171,15 +171,27 @@ async def search_wikipedia(query: str, client: httpx.AsyncClient) -> list[dict]:
 
 
 def merge_results(google: list, brave: list, ddg: list, wiki: list) -> list[dict]:
-    """Merge results: boost URLs appearing in multiple sources, wiki ranked lower."""
+    """Merge results: boost URLs appearing in multiple sources. Wikipedia always included separately."""
     url_map: dict[str, dict] = {}
-    for result in google + brave + ddg + wiki:
+
+    # First pass: web results
+    for result in google + brave + ddg:
         key = re.sub(r"https?://", "", result["url"]).rstrip("/")
         if key not in url_map:
             url_map[key] = {**result, "score": 0, "sources": []}
-        url_map[key]["score"] += 2 if result["source"] in ("google", "brave", "duckduckgo") else 1
+        url_map[key]["score"] += 2
         if result["source"] not in url_map[key]["sources"]:
             url_map[key]["sources"].append(result["source"])
+
+    # Second pass: Wikipedia — always add its source tag, boost if already seen
+    for result in wiki:
+        key = re.sub(r"https?://", "", result["url"]).rstrip("/")
+        if key in url_map:
+            url_map[key]["score"] += 1
+            if "wikipedia" not in url_map[key]["sources"]:
+                url_map[key]["sources"].append("wikipedia")
+        else:
+            url_map[key] = {**result, "score": 1, "sources": ["wikipedia"]}
 
     merged = sorted(url_map.values(), key=lambda x: -x["score"])
     return dedupe(merged)
@@ -191,7 +203,13 @@ async def index():
         return f.read()
 
 
-@app.get("/search")
+@app.get("/search", response_class=HTMLResponse)
+async def search_page(q: str = Query(..., min_length=1)):
+    with open("/app/static/index.html") as f:
+        return f.read()
+
+
+@app.get("/api/search")
 async def search(q: str = Query(..., min_length=1)):
     start = time.time()
     async with httpx.AsyncClient(follow_redirects=True) as client:
@@ -201,6 +219,8 @@ async def search(q: str = Query(..., min_length=1)):
             search_duckduckgo(q, client),
             search_wikipedia(q, client),
         )
+
+    print(f"[search] google={len(google)} brave={len(brave)} ddg={len(ddg)} wiki={len(wiki)}")
 
     results = merge_results(google, brave, ddg, wiki)
     elapsed = round((time.time() - start) * 1000)
@@ -215,4 +235,21 @@ async def search(q: str = Query(..., min_length=1)):
             "duckduckgo": len(ddg),
             "wikipedia": len(wiki),
         },
+    })
+
+
+@app.get("/api/debug")
+async def debug(q: str = Query(..., min_length=1)):
+    async with httpx.AsyncClient(follow_redirects=True) as client:
+        google, brave, ddg, wiki = await asyncio.gather(
+            search_google(q, client),
+            search_brave(q, client),
+            search_duckduckgo(q, client),
+            search_wikipedia(q, client),
+        )
+    return JSONResponse({
+        "google": google,
+        "brave": brave,
+        "duckduckgo": ddg,
+        "wikipedia": wiki,
     })

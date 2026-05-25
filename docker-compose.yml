@@ -2,12 +2,15 @@ services:
   searchr:
     build: .
     ports:
-      - "4444:4444"
+      - "6969:6969"
     environment:
       - BRAVE_API_KEY=${BRAVE_API_KEY:-}
+    dns:
+      - 94.140.14.14
+      - 94.140.15.15
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:4444/"]
+      test: ["CMD", "curl", "-f", "http://localhost:6969/"]
       interval: 30s
       timeout: 5s
       retries: 3

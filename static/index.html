@@ -233,7 +233,7 @@
   .pill.all.active { background: var(--text); }
   .pill.google.active { background: var(--google); }
   .pill.brave.active { background: var(--brave); }
-  .pill.wiki.active { background: var(--wiki); }
+  .pill.wikipedia.active { background: var(--wiki); color: #0d0d0f; }
   .pill.duckduckgo.active { background: var(--ddg); color: #fff; }
   .src-duckduckgo { background: var(--ddg); }
 
@@ -410,7 +410,7 @@
   }
 
   function sourceClass(src) {
-    return src === 'wikipedia' ? 'src-wikipedia' : `src-${src}`;
+    return `src-${src}`;
   }
 
   function renderResults(results) {
@@ -426,10 +426,13 @@
     filters.forEach(f => {
       const pill = document.createElement('button');
       pill.className = `pill ${f} ${activeFilter === f ? 'active' : ''}`;
-      pill.textContent = f;
+      pill.textContent = f === 'duckduckgo' ? 'ddg' : f;
       pill.onclick = () => {
         activeFilter = f;
-        const filtered = f === 'all' ? allResults : allResults.filter(r => r.sources.includes(f) || r.source === f);
+        const filtered = f === 'all' ? allResults : allResults.filter(r => {
+          const srcs = r.sources || (r.source ? [r.source] : []);
+          return srcs.includes(f);
+        });
         renderResults(filtered);
       };
       filterRow.appendChild(pill);
@@ -480,7 +483,7 @@
     loader.style.display = 'flex';
 
     try {
-      const res = await fetch(`/search?q=${encodeURIComponent(query)}`);
+      const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
       const data = await res.json();
       allResults = data.results;
       renderResults(allResults);
